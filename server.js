@@ -24,7 +24,7 @@ app.get('/yelp', getYelp);
 
 app.get('/meetups', getMeetups);
 
-app.get('/hiking', getHiking);
+app.get('/trails', getHiking);
 
 const PORT = process.env.PORT || 3000;
 
@@ -187,7 +187,6 @@ function getHiking(request, response) {
   return superagent.get(url)
 
     .then(result => {
-      console.log('hello');
       const hikingSummaries = result.body.trails.map(hiking => {
         return new Hiking(hiking);
       });
