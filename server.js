@@ -14,13 +14,17 @@ client.on('error', err => console.error(err));
 app.use(cors());
 
 
-app.get('/location', getLocation)
+app.get('/location', getLocation);
 
 app.get('/weather', getWeather);
 
 app.get('/movies', getMovies);
 
 app.get('/yelp', getYelp);
+
+app.get('/meetups', getMeetups);
+
+app.get('/hiking', getHiking);
 
 const PORT = process.env.PORT || 3000;
 
@@ -102,7 +106,6 @@ function getWeather(request, response) {
         return new Weather(day);
       })
       response.send(weatherSummaries)
-      console.log(weatherSummaries);
     })
     .catch( error => handleError(error, response));
 }
@@ -123,7 +126,6 @@ function getYelp(request, response) {
         return new Yelp(data);
       });
       response.send(businessSummaries);
-      console.log(businessSummaries);
     })
     .catch( error => handleError(error, response));
 }
@@ -159,9 +161,57 @@ function MoviesData(movies) {
   this.released_on = movies.release_date;
 }
 
+function getMeetups(request, response) {
+  const url = `https://api.meetup.com/find/upcoming_events?&sign=true&photo-host=public&lon=${request.query.data.longitude}&page=5&lat=${request.query.data.latitude}&key=${process.env.MEETUP_API_KEY}`;
+  return superagent.get(url)
+
+    .then(result => {
+      const meetupSummaries = result.body.events.map(meetups => {
+        return new Meetups(meetups);
+      });
+      response.send(meetupSummaries);
+    })
+    .catch( error => handleError(error, response));
+}
+
+function Meetups(events) {
+  this.link = events.link;
+  this.name = events.name;
+  this.creation_date = events.created;
+  this.host = events.group.name;
+}
+
+
+function getHiking(request, response) {
+  const url = `https://www.hikingproject.com/data/get-trails?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&maxDistance=10&key=${process.env.HIKING_API_KEY}`;
+  return superagent.get(url)
+
+    .then(result => {
+      console.log('hello');
+      const hikingSummaries = result.body.trails.map(hiking => {
+        return new Hiking(hiking);
+      });
+      response.send(hikingSummaries);
+    })
+    .catch( error => handleError(error, response));
+}
+
+function Hiking(data) {
+  this.name = data.name;
+  this.location = data.location ;
+  this.length = data.length;
+  this.stars = data.stars;
+  this.star_votes = data.starVote;
+  this.summary = data.summary;
+  this.trail_url = data.url;
+  this.conditions = data.conditionDetails;
+  this.condition_date = data.conditionDate.match(/\S+/g)[0];
+  this.condition_time = data.conditionDate.match(/\S+/g)[1];
+}
+
+
 function handleError(err, res) {
   console.error(err);
   if (res) res.status(500).send('Sorry, something went wrong');
 }
-
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
